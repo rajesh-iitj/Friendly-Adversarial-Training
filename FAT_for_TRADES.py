@@ -3,6 +3,7 @@ import argparse
 import torchvision
 import torch.optim as optim
 from torchvision import transforms
+import matplotlib.pyplot as plt
 import datetime
 from models import *
 from earlystop import earlystop
@@ -11,7 +12,7 @@ import attack_generator as attack
 from utils import Logger
 
 parser = argparse.ArgumentParser(description='PyTorch Friendly Adversarial Training for TRADES')
-parser.add_argument('--epochs', type=int, default=85, metavar='N', help='number of epochs to train')
+parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train')
 parser.add_argument('--weight_decay', '--wd', default=2e-4, type=float, metavar='W')
 parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum')
@@ -90,11 +91,11 @@ def train(model, train_loader, optimizer, tau):
 def adjust_tau(epoch, dynamictau):
     tau = args.tau
     if dynamictau:
-        if epoch <= 30:
+        if epoch <= 10:
             tau = 0
-        elif epoch <= 50:
+        elif epoch <= 15:
             tau = 1
-        elif epoch <= 70:
+        elif epoch <= 23:
             tau = 2
         else:
             tau = 3
@@ -201,11 +202,13 @@ for epoch in range(start_epoch, args.epochs):
 
     logger_test.append([epoch + 1, test_nat_acc, fgsm_acc, test_pgd20_acc, cw_acc])
 
-    save_checkpoint({
-        'epoch': epoch + 1,
-        'state_dict': model.state_dict(),
-        'bp_avg' : bp_count_avg,
-        'test_nat_acc': test_nat_acc,
-        'test_pgd20_acc': test_pgd20_acc,
-        'optimizer': optimizer.state_dict(),
-    })
+    # save_checkpoint({
+    #     'epoch': epoch + 1,
+    #     'state_dict': model.state_dict(),
+    #     'bp_avg' : bp_count_avg,
+    #     'test_nat_acc': test_nat_acc,
+    #     'test_pgd20_acc': test_pgd20_acc,
+    #     'optimizer': optimizer.state_dict(),
+    # })
+logger_test.plot()
+plt.show()
