@@ -11,6 +11,9 @@ import numpy as np
 from utils import Logger
 import attack_generator as attack
 
+from torchvision.datasets import STL10
+from torch.utils.data import DataLoader
+
 parser = argparse.ArgumentParser(description='PyTorch Friendly Adversarial Training')
 parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train')
 parser.add_argument('--weight_decay', '--wd', default=2e-4, type=float, metavar='W')
@@ -23,7 +26,7 @@ parser.add_argument('--seed', type=int, default=7, metavar='S', help='random see
 parser.add_argument('--net', type=str, default="WRN_madry",
                     help="decide which network to use,choose from smallcnn,resnet18,WRN")
 parser.add_argument('--tau', type=int, default=0, help='step tau')
-parser.add_argument('--dataset', type=str, default="cifar10", help="choose from cifar10,svhn caltech101")
+parser.add_argument('--dataset', type=str, default="cifar10", help="choose from cifar10,svhn caltech101 STL10")
 parser.add_argument('--rand_init', type=bool, default=True, help="whether to initialize adversarial sample with random noise")
 parser.add_argument('--omega', type=float, default=0.001, help="random sample parameter for adv data generation")
 parser.add_argument('--dynamictau', type=bool, default=True, help='whether to use dynamic tau')
@@ -104,15 +107,27 @@ def save_checkpoint(state, checkpoint=out_dir, filename='checkpoint.pth.tar'):
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
 
-# setup data loader
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-])
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-])
+
+if args.dataset == "STL10":
+    transform_train = transforms.Compose([
+        transforms.Resize((32, 32)),  # Resize images to 32x32 pixels
+        transforms.ToTensor(),         # Convert images to tensors (0-1 range)
+        transforms.Normalize(          # Normalize the images (mean and std)
+        mean=[0.5, 0.5, 0.5],          # These values are precomputed for STL-10
+        std=[0.5, 0.5, 0.5]
+    )
+    ])
+    transform_test = transform_train
+else:
+    # setup data loader
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ])
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+    ])
 
 print('==> Load Test Data')
 if args.dataset == "cifar10":
@@ -130,6 +145,15 @@ if args.dataset == "caltech101":
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
     testset = torchvision.datasets.Caltech101(root='./data', download=True, transform=transform_test) 
     test_loader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
+
+if args.dataset == "STL10":
+    # Load the STL-10 dataset (specify root directory where data is located)
+    train_dataset = STL10(root='stl10_data', split='train', transform=transform_train, download=False)
+    test_dataset = STL10(root='stl10_data', split='test', transform=transform_test, download=False)
+
+    # Create DataLoader objects for training and testing
+    train_loader = torch.utils.data.DataLoader(train_dataset, 128, shuffle=True, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(test_dataset, 128, shuffle=False, num_workers=2)
 
 print('==> Load Model')
 if args.net == "smallcnn":
