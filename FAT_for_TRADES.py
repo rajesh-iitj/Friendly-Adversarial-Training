@@ -23,7 +23,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 parser.add_argument('--net', type=str, default="WRN",help="decide which network to use,choose from smallcnn,resnet18,WRN")
 parser.add_argument('--tau', type=int, default=0, help='step tau')
 parser.add_argument('--beta',type=float,default=6.0,help='regularization parameter')
-parser.add_argument('--dataset', type=str, default="cifar10", help="choose from cifar10,svhn")
+parser.add_argument('--dataset', type=str, default="cifar10", help="choose from cifar10,svhn, Caltech101")
 parser.add_argument('--rand_init', type=bool, default=True, help="whether to initialize adversarial sample with random noise")
 parser.add_argument('--omega', type=float, default=0.0, help="random sample parameter")
 parser.add_argument('--dynamictau', type=bool, default=True, help='whether to use dynamic tau')
@@ -136,7 +136,12 @@ if args.dataset == "svhn":
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
     testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
     test_loader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
-
+if args.dataset == "caltech101":
+    trainset = torchvision.datasets.Caltech101(root='./data', split='train', download=True, transform=transform_train)
+    train_loader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+    testset = torchvision.datasets.Caltech101(root='./data', split='test', download=True, transform=transform_test)
+    test_loader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
+    
 print('==> Load Model')
 if args.net == "smallcnn":
     model = SmallCNN().cuda()
