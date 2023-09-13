@@ -203,5 +203,5 @@ for epoch in range(start_epoch, args.epochs):
     #     'optimizer': optimizer.state_dict(),
     # })
 
-logger_test.log()
+logger_test.plot()
 plt.show()
