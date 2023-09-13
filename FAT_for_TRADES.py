@@ -11,8 +11,11 @@ import numpy as np
 import attack_generator as attack
 from utils import Logger
 
+from torchvision.datasets import STL10
+from torch.utils.data import DataLoader
+
 parser = argparse.ArgumentParser(description='PyTorch Friendly Adversarial Training for TRADES')
-parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train')
+parser.add_argument('--epochs', type=int, default=120, metavar='N', help='number of epochs to train')
 parser.add_argument('--weight_decay', '--wd', default=2e-4, type=float, metavar='W')
 parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='M', help='SGD momentum')
@@ -91,11 +94,11 @@ def train(model, train_loader, optimizer, tau):
 def adjust_tau(epoch, dynamictau):
     tau = args.tau
     if dynamictau:
-        if epoch <= 10:
+        if epoch <= 30:
             tau = 0
-        elif epoch <= 15:
+        elif epoch <= 50:
             tau = 1
-        elif epoch <= 23:
+        elif epoch <= 70:
             tau = 2
         else:
             tau = 3
@@ -116,14 +119,26 @@ def save_checkpoint(state, checkpoint=out_dir, filename='checkpoint.pth.tar'):
     torch.save(state, filepath)
 
 # setup data loader
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-])
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-])
+if args.dataset == "STL10":
+    transform_train = transforms.Compose([
+        transforms.Resize((32, 32)),  # Resize images to 32x32 pixels
+        transforms.ToTensor(),         # Convert images to tensors (0-1 range)
+        transforms.Normalize(          # Normalize the images (mean and std)
+        mean=[0.5, 0.5, 0.5],          # These values are precomputed for STL-10
+        std=[0.5, 0.5, 0.5]
+    )
+    ])
+    transform_test = transform_train
+else:
+    # setup data loader
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ])
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+    ])
 
 print('==> Load Test Data')
 if args.dataset == "cifar10":
@@ -141,6 +156,14 @@ if args.dataset == "caltech101":
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
     testset = torchvision.datasets.Caltech101(root='./data', download=True, transform=transform_test) 
     test_loader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
+if args.dataset == "STL10":
+    # Load the STL-10 dataset (specify root directory where data is located)
+    train_dataset = STL10(root='stl10_data', split='train', transform=transform_train, download=False)
+    test_dataset = STL10(root='stl10_data', split='test', transform=transform_test, download=False)
+
+    # Create DataLoader objects for training and testing
+    train_loader = torch.utils.data.DataLoader(train_dataset, 128, shuffle=True, num_workers=2)
+    test_loader = torch.utils.data.DataLoader(test_dataset, 128, shuffle=False, num_workers=2)
     
 print('==> Load Model')
 if args.net == "smallcnn":
@@ -207,13 +230,13 @@ for epoch in range(start_epoch, args.epochs):
 
     logger_test.append([epoch + 1, test_nat_acc, fgsm_acc, test_pgd20_acc, cw_acc])
 
-    # save_checkpoint({
-    #     'epoch': epoch + 1,
-    #     'state_dict': model.state_dict(),
-    #     'bp_avg' : bp_count_avg,
-    #     'test_nat_acc': test_nat_acc,
-    #     'test_pgd20_acc': test_pgd20_acc,
-    #     'optimizer': optimizer.state_dict(),
-    # })
+    save_checkpoint({
+        'epoch': epoch + 1,
+        'state_dict': model.state_dict(),
+        'bp_avg' : bp_count_avg,
+        'test_nat_acc': test_nat_acc,
+        'test_pgd20_acc': test_pgd20_acc,
+        'optimizer': optimizer.state_dict(),
+    })
 logger_test.plot()
 plt.show()

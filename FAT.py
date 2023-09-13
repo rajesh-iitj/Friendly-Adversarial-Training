@@ -223,14 +223,14 @@ for epoch in range(start_epoch, args.epochs):
 
     logger_test.append([epoch + 1, test_nat_acc, fgsm_acc, test_pgd20_acc, cw_acc])
 
-    # save_checkpoint({
-    #     'epoch': epoch + 1,
-    #     'state_dict': model.state_dict(),
-    #     'bp_avg': bp_count_avg,
-    #     'test_nat_acc': test_nat_acc,
-    #     'test_pgd20_acc': test_pgd20_acc,
-    #     'optimizer': optimizer.state_dict(),
-    # })
+    save_checkpoint({
+         'epoch': epoch + 1,
+         'state_dict': model.state_dict(),
+         'bp_avg': bp_count_avg,
+         'test_nat_acc': test_nat_acc,
+         'test_pgd20_acc': test_pgd20_acc,
+         'optimizer': optimizer.state_dict(),
+     })
 
 logger_test.plot()
 plt.show()
