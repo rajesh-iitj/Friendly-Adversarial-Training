@@ -78,9 +78,9 @@ def train(model, train_loader, optimizer, tau):
 def adjust_tau(epoch, dynamictau):
     tau = args.tau
     if dynamictau:
-        if epoch <= 12:
+        if epoch <= 50:
             tau = 0
-        elif epoch <= 22:
+        elif epoch <= 90:
             tau = 1
         else:
             tau = 2
