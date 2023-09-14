@@ -53,7 +53,7 @@ def eval_clean(model, test_loader):
     log = 'Natrual Test Result ==> Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset))
-    # print(log)
+    print(log)
     test_accuracy = correct / len(test_loader.dataset)
     return test_loss, test_accuracy
 
@@ -73,7 +73,7 @@ def eval_robust(model, test_loader, perturb_steps, epsilon, step_size, loss_fn, 
     log = 'Attack Setting ==> Loss_fn:{}, Perturb steps:{}, Epsilon:{}, Step dize:{} \n Test Result ==> Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(loss_fn,perturb_steps,epsilon,step_size,
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset))
-    # print(log)
+    print(log)
     test_accuracy = correct / len(test_loader.dataset)
     return test_loss, test_accuracy
 
